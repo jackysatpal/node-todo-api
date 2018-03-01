@@ -1,11 +1,14 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const { ObjectId } = require('mongodb');
 
 const { mongoose } = require('../db/mongoose');
 const { Todo } = require('./models/todo');
 const { User } = require('./models/user');
 
 const app = express();
+
+const port = process.env.PORT || 8080;
 
 app.use(bodyParser.json());
 
@@ -31,22 +34,28 @@ app.get('/todos', (req, res) => {
 	}, (e) => {
 		res.send(400).send(e);
 	})
-})
+});
 
-app.post('/users', (req, res) => {
+app.get('/todos/:id', (req, res) => {
+	const id = req.params.id;
+	
+	if (!ObjectId.isValid(id)) {
+		return res.status(404).send();
+	}
 
-	const user1 = new User({
-		email: req.body.email
+	Todo.findById(id).then( (todo) => {
+		if (!todo) {
+			return res.status(404).send();
+		}
+
+		res.send({ todo });
+
+	}).catch( (e) => {
+		res.status(400).send();
 	});
 
-	user1.save().then( (result) => {
-		res.send(result);
-	}, (err) => {
-		res.status(400).send(err);
-	});
+});
 
-})
-
-app.listen(8080, () => {
+app.listen(port, () => {
 	console.log('Server is up');
 });
